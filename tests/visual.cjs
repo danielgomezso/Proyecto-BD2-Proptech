@@ -1,0 +1,24 @@
+const {chromium}=require('C:/Users/Usuario/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('fs');
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8080');
+ await page.screenshot({path:'target/login.png',fullPage:true});
+ const sql=fs.readFileSync('D:/temporada 4/Bases 2/Proyecto/Script Proyecto BDII.sql','utf8');
+ const password=sql.match(/CREATE LOGIN LoginAdmin WITH PASSWORD = '([^']+)'/)[1];
+ await page.locator('[name=username]').fill('LoginAdmin');await page.locator('[name=password]').fill(password);await page.locator('[name=terminal]').fill('PRUEBA-VISUAL');await page.getByRole('button',{name:'Entrar a mi espacio'}).click();
+ await page.locator('#app').waitFor({state:'visible'});
+ await page.getByText('Últimas facturas',{exact:true}).waitFor();
+ await page.screenshot({path:'target/dashboard.png',fullPage:true});
+ await page.locator('[data-nav=clientes]').click();await page.locator('#search').waitFor();
+ await page.locator('#new-button').click();await page.locator('#editor').waitFor({state:'visible'});await page.screenshot({path:'target/client-form.png',fullPage:true});await page.locator('#cancel-editor').click();
+ await page.locator('[data-nav=facturas]').click();await page.locator('#search').waitFor();await page.locator('#new-button').click();await page.locator('#editor').waitFor({state:'visible'});
+ await page.locator('#edit-form [name=cod_cliente]').selectOption({index:1});await page.locator('#edit-form [name=condicion_venta]').selectOption('CONTADO');await page.locator('#edit-form [name=medio_pago]').selectOption('SINPE MOVIL');await page.locator('#edit-form [name=moneda]').selectOption('CRC');await page.locator('[data-line="0"]').selectOption({index:1});await page.screenshot({path:'target/invoice-form.png',fullPage:true});await page.locator('#cancel-editor').click();
+ await page.locator('[data-nav=reportes]').click();await page.getByRole('button',{name:'Consultar reporte'}).click();await page.locator('#report-next').waitFor();
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:'target/mobile.png',fullPage:true});
+ await page.locator('#logout').click();await page.locator('#login-screen').waitFor({state:'visible'});
+ console.log(JSON.stringify({errors,passed:'Login, dashboard, client form, invoice detail form, report, mobile and logout'}));
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});
